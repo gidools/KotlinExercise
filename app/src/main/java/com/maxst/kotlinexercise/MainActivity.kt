@@ -12,6 +12,7 @@ import java.beans.PropertyChangeSupport
 import java.lang.IndexOutOfBoundsException
 import java.lang.reflect.Type
 import java.time.LocalDate
+import kotlin.properties.Delegates
 import kotlin.reflect.KProperty
 
 class MainActivity : AppCompatActivity() {
@@ -34,17 +35,6 @@ class MainActivity : AppCompatActivity() {
     }
 }
 
-class ObservableProperty(
-    var propValue: Int, val changeSupport: PropertyChangeSupport
-) {
-    operator fun getValue(p: Person, prop: KProperty<*>): Int = propValue
-    operator fun setValue(p: Person, prop: KProperty<*>, newValue: Int) {
-        val oldValue = propValue
-        propValue = newValue
-        changeSupport.firePropertyChange(prop.name, oldValue, newValue)
-    }
-}
-
 open class PropertyChangeAware {
     protected val changeSupport = PropertyChangeSupport(this)
     fun addPropertyChangeListener(listener: PropertyChangeListener) {
@@ -57,6 +47,11 @@ open class PropertyChangeAware {
 }
 
 class Person(val name: String, age: Int, salary: Int) : PropertyChangeAware() {
-    var age: Int by ObservableProperty(age, changeSupport)
-    var salary: Int by ObservableProperty(salary, changeSupport)
+    private val observer = {
+        prop: KProperty<*>, oldValue: Int, newValue: Int ->
+        changeSupport.firePropertyChange(prop.name, oldValue, newValue)
+    }
+
+    var age: Int by Delegates.observable(age, observer)
+    var salary: Int by Delegates.observable(salary, observer)
 }
