@@ -5,6 +5,10 @@ import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.support.annotation.RequiresApi
 import android.view.View
+import kotlinx.android.synthetic.main.activity_main.*
+import java.beans.PropertyChangeEvent
+import java.beans.PropertyChangeListener
+import java.beans.PropertyChangeSupport
 import java.lang.IndexOutOfBoundsException
 import java.lang.reflect.Type
 import java.time.LocalDate
@@ -16,19 +20,43 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val p = Person("Alice")
-        p.emails
-        p.emails
+        textView.setOnClickListener { view -> view.id}
+
+        val person = Person("Alice", 39, 4000)
+        person.addPropertyChangeListener (
+            PropertyChangeListener { event ->
+                println("Property ${event.propertyName} changed " + "from ${event.oldValue} to ${event.newValue}") }
+        )
+
+        person.age = 40
+        person.salary = 5000
     }
 }
 
-class Email { }
+open class PropertyChangeAware {
+    protected val changeSupport = PropertyChangeSupport(this)
 
-fun loadEmails(person: Person): List<Email> {
-    println("${person.name} 의 이메일을 가져옴")
-    return listOf()
+    fun addPropertyChangeListener(listener: PropertyChangeListener) {
+        changeSupport.addPropertyChangeListener(listener)
+    }
+
+    fun removePropertyChangeListener(listener: PropertyChangeListener) {
+        changeSupport.removePropertyChangeListener(listener)
+    }
 }
 
-class Person(val name: String) {
-    val emails by lazy { loadEmails(this)}
+class Person(val name: String, age: Int, salary: Int) : PropertyChangeAware() {
+    var age: Int = age
+        set(newValue) {
+            val oldValue = field
+            field = newValue
+            changeSupport.firePropertyChange("age", oldValue, newValue)
+        }
+
+    var salary: Int = salary
+        set(newValue) {
+            val oldValue = field
+            field = newValue
+            changeSupport.firePropertyChange("salary", oldValue, newValue)
+        }
 }
