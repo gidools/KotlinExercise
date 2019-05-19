@@ -22,20 +22,31 @@ class MainActivity : AppCompatActivity() {
 
         textView.setOnClickListener { view -> view.id}
 
-        val person = Person("Alice", 39, 4000)
-        person.addPropertyChangeListener (
+        val person = Person("Alice", 40, 4000)
+        person.addPropertyChangeListener(
             PropertyChangeListener { event ->
-                println("Property ${event.propertyName} changed " + "from ${event.oldValue} to ${event.newValue}") }
+                println("propName : ${event.propertyName}, oldValue : ${event.oldValue}, newValue : ${event.newValue}")
+            }
         )
 
-        person.age = 40
         person.salary = 5000
+    }
+}
+
+class ObservableProperty(
+    val propName: String, var propValue: Int,
+    val changeSupport: PropertyChangeSupport
+) {
+    fun getValue(): Int = propValue
+    fun setValue(newValue: Int) {
+        val oldValue = propValue
+        propValue = newValue
+        changeSupport.firePropertyChange(propName, oldValue, newValue)
     }
 }
 
 open class PropertyChangeAware {
     protected val changeSupport = PropertyChangeSupport(this)
-
     fun addPropertyChangeListener(listener: PropertyChangeListener) {
         changeSupport.addPropertyChangeListener(listener)
     }
@@ -46,17 +57,13 @@ open class PropertyChangeAware {
 }
 
 class Person(val name: String, age: Int, salary: Int) : PropertyChangeAware() {
-    var age: Int = age
-        set(newValue) {
-            val oldValue = field
-            field = newValue
-            changeSupport.firePropertyChange("age", oldValue, newValue)
-        }
+    private val _age = ObservableProperty("age", age, changeSupport)
+    var age: Int
+        get() = _age.getValue()
+        set(value) { _age.setValue(value)}
 
-    var salary: Int = salary
-        set(newValue) {
-            val oldValue = field
-            field = newValue
-            changeSupport.firePropertyChange("salary", oldValue, newValue)
-        }
+    private val _salary = ObservableProperty("salary", salary, changeSupport)
+    var salary: Int
+        get() = _salary.getValue()
+        set(value) { _salary.setValue(value)}
 }
