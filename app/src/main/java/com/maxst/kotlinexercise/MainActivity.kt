@@ -12,6 +12,7 @@ import java.beans.PropertyChangeSupport
 import java.lang.IndexOutOfBoundsException
 import java.lang.reflect.Type
 import java.time.LocalDate
+import kotlin.reflect.KProperty
 
 class MainActivity : AppCompatActivity() {
 
@@ -20,7 +21,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        textView.setOnClickListener { view -> view.id}
+        textView.setOnClickListener { view -> view.id }
 
         val person = Person("Alice", 40, 4000)
         person.addPropertyChangeListener(
@@ -34,14 +35,13 @@ class MainActivity : AppCompatActivity() {
 }
 
 class ObservableProperty(
-    val propName: String, var propValue: Int,
-    val changeSupport: PropertyChangeSupport
+    var propValue: Int, val changeSupport: PropertyChangeSupport
 ) {
-    fun getValue(): Int = propValue
-    fun setValue(newValue: Int) {
+    operator fun getValue(p: Person, prop: KProperty<*>): Int = propValue
+    operator fun setValue(p: Person, prop: KProperty<*>, newValue: Int) {
         val oldValue = propValue
         propValue = newValue
-        changeSupport.firePropertyChange(propName, oldValue, newValue)
+        changeSupport.firePropertyChange(prop.name, oldValue, newValue)
     }
 }
 
@@ -57,13 +57,6 @@ open class PropertyChangeAware {
 }
 
 class Person(val name: String, age: Int, salary: Int) : PropertyChangeAware() {
-    private val _age = ObservableProperty("age", age, changeSupport)
-    var age: Int
-        get() = _age.getValue()
-        set(value) { _age.setValue(value)}
-
-    private val _salary = ObservableProperty("salary", salary, changeSupport)
-    var salary: Int
-        get() = _salary.getValue()
-        set(value) { _salary.setValue(value)}
+    var age: Int by ObservableProperty(age, changeSupport)
+    var salary: Int by ObservableProperty(salary, changeSupport)
 }
